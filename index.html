@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Solo v18.20 FSW - Production</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700;900&display=swap');
+        :root { 
+            --c-best: #4cd964; --c-std: #ffffff; --c-slow: #ff3b30; --c-label: #BBB; 
+            --c-wait: #ff9500; --c-bg-modal: rgba(0,0,0,0.95); 
+        }
+        
+        body { margin: 0; background: #000; color: #fff; font-family: 'Roboto Condensed', sans-serif; overflow: hidden; height: 100dvh; width: 100vw; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        
+        #car_no_overlay { position: fixed; top: 10px; left: 10px; font-size: 32px; font-weight: 900; color: #00ffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index: 100; pointer-events: none; }
+        
+        .container { display: flex; flex-direction: column; height: 100dvh; width: 100vw; }
+
+        /* --- Portrait --- */
+        .portrait-only { display: flex; flex-direction: column; height: 90dvh; }
+        .landscape-only { display: none !important; }
+
+        .rival-section { height: 10dvh; background: #222; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #444; box-sizing: border-box; }
+        #remain_display { font-size: 38px; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+        .main-section { height: 40dvh; background: #111; position: relative; overflow: hidden; box-sizing: border-box; }
+        #current_lap_time { position: absolute; top: 15%; width: 100%; text-align: center; font-size: 24vw; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -3px; }
+        .delta-container { position: absolute; bottom: 10%; width: 100%; display: flex; justify-content: center; align-items: baseline; }
+        .delta-label { font-size: 16px; color: var(--c-label); margin-right: 10px; font-weight: 700; }
+        #delta_val { font-size: 16vw; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+
+        .history-section-portrait { height: 10dvh; background: #080808; display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #333; box-sizing: border-box; }
+        .hist-label { font-size: 14px; color: var(--c-label); margin-right: 10px; font-weight: 700; }
+        .hist-val { font-size: 10vw; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+        .info-grid-portrait { height: 30dvh; display: flex; flex-direction: column; background: #333; gap: 2px; }
+        .sector-row-p { height: 15dvh; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+        .best-trap-row-p { height: 15dvh; display: grid; grid-template-columns: 3fr 1fr; gap: 2px; }
+        
+        .info-box { background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; height: 100%; }
+        .label-grid { font-size: 11px; font-weight: bold; color: var(--c-label); text-transform: uppercase; margin-bottom: 2px; }
+        .val-grid { font-size: 8.5vw; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+        .val-grid-best { font-size: 13vw; font-weight: 900; color: var(--c-best); font-variant-numeric: tabular-nums; line-height: 1; }
+
+        /* --- Footer --- */
+        .footer { height: 10dvh; display: grid; grid-template-columns: 70px 60px 60px 1fr 65px 50px; align-items: center; padding: 0 5px; padding-bottom: env(safe-area-inset-bottom); background: #000044; z-index: 1000; box-sizing: border-box; gap: 4px; }
+        #gps_monitor { font-size: 7px; font-family: monospace; color: #0f0; background: rgba(0,0,0,0.3); padding: 2px; border: 1px solid #004400; line-height: 1.1; pointer-events: none; overflow: hidden; }
+        .menu-btn, .stop-btn, .reset-btn { font-size: 11px; height: 36px; font-weight: 900; border-radius: 4px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .menu-btn { background: #333; color: #fff; border: 1px solid #666; }
+        .stop-btn { background: #ff3b30; color: #fff; }
+        .reset-btn { background: #444; color: #ccc; border: 1px solid #666; }
+        #mode_label { font-size: 14px; font-weight: 900; color: var(--c-wait); text-align: center; white-space: nowrap; }
+        #lap_count_display { font-size: 30px; font-weight: 900; text-align: right; }
+
+        /* --- Landscape (Optimized DELTA) --- */
+        @media (orientation: landscape) {
+            .portrait-only { display: none !important; }
+            .landscape-only { display: flex !important; flex-direction: column; height: calc(100dvh - 9dvh); }
+            .ls-main-wrapper { flex: 1; display: flex; flex-direction: row; min-height: 0; }
+            .ls-main-section { flex: 6.5; background: #111; position: relative; border-right: 2px solid #333; }
+            .ls-side-section { flex: 3.5; background: #080808; display: flex; flex-direction: column; }
+            #ls_current_lap_time { position: absolute; top: 12%; width: 100%; text-align: center; font-size: 28vh; font-weight: 900; line-height: 1; }
+            .ls-delta-container { position: absolute; bottom: 8%; width: 100%; display: flex; justify-content: center; align-items: baseline; }
+            #ls_delta_val { font-size: 22vh; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+            .ls-remain-box { height: 18vh; background: #222; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #444; font-size: 10vh; font-weight: 900; }
+            .ls-history-box { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 5px; gap: 2vh; }
+            .ls-hist-val { font-size: 8vh; font-weight: 900; }
+            .ls-info-grid { height: 20vh; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: #333; border-top: 2px solid #444; }
+            .ls-val-grid { font-size: 11vh; font-weight: 900; }
+            .footer { height: 9dvh !important; grid-template-columns: 80px 70px 70px 1fr 70px 60px; gap: 5px; }
+            .menu-btn, .stop-btn, .reset-btn { height: 28px !important; font-size: 10px !important; }
+        }
+
+        #start_overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; display: flex; justify-content: center; align-items: center; }
+        #start_btn_large { background: var(--c-best); color: #000; border: none; padding: 30px 60px; font-size: 32px; font-weight: 900; border-radius: 12px; cursor: pointer; }
+        #settings_modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--c-bg-modal); z-index: 6000; flex-direction: column; justify-content: center; align-items: center; }
+        .modal-content { width: 85%; background: #222; padding: 15px; border: 1px solid #444; text-align: center; max-width: 400px; max-height: 95dvh; overflow-y: auto; }
+        .modal-row { margin-bottom: 10px; text-align: left; }
+        .modal-row label { display: block; color: var(--c-label); font-size: 10px; margin-bottom: 2px; }
+        .modal-row input { width: 100%; background: #000; color: #fff; border: 1px solid #444; padding: 10px; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .action-btn { width: 100%; padding: 10px; margin-top: 8px; font-weight: 900; border: none; cursor: pointer; border-radius: 4px; }
+        .txt-faster { color: var(--c-best) !important; } .txt-slower { color: var(--c-slow) !important; } .txt-std { color: var(--c-std) !important; }
+    </style>
+</head>
+<body>
+
+<div id="car_no_overlay"># --</div>
+<div id="start_overlay"><button id="start_btn_large">TAP TO START</button></div>
+
+<div class="container">
+    <div class="portrait-only">
+        <div class="rival-section"><span id="remain_display">--:--</span></div>
+        <div class="main-section">
+            <div id="current_lap_time">0:00.00</div>
+            <div class="delta-container">
+                <span class="delta-label">DELTA</span>
+                <span id="delta_val" class="txt-std">0.00</span>
+            </div>
+        </div>
+        <div class="history-section-portrait">
+            <span class="hist-label">PREV 1</span>
+            <span id="last_lap_1" class="hist-val">--:--.--</span>
+        </div>
+        <div class="info-grid-portrait">
+            <div class="sector-row-p">
+                <div class="info-box"><div class="label-grid">S1</div><div id="s1_val" class="val-grid">--.--</div></div>
+                <div class="info-box"><div class="label-grid">S2</div><div id="s2_val" class="val-grid">--.--</div></div>
+                <div class="info-box"><div class="label-grid">S3</div><div id="s3_val" class="val-grid">--.--</div></div>
+            </div>
+            <div class="best-trap-row-p">
+                <div class="info-box"><div class="label-grid" style="color:var(--c-best)">BEST LAP</div><div id="best_lap_display" class="val-grid-best">--:--.--</div></div>
+                <div class="info-box"><div class="label-grid">TRAP</div><div id="max_speed_val" class="val-grid">0.0</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="landscape-only">
+        <div class="ls-main-wrapper">
+            <div class="ls-main-section"><div id="ls_current_lap_time">0:00.00</div><div class="ls-delta-container"><span class="delta-label">DELTA</span><span id="ls_delta_val" class="txt-std">0.00</span></div></div>
+            <div class="ls-side-section"><div class="ls-remain-box" id="ls_remain_display">--:--</div><div class="ls-history-box"><div><div class="label-grid" style="color:var(--c-best)">BEST</div><div id="ls_best_lap_display" class="ls-hist-val" style="color:var(--c-best)">--:--.--</div></div><div><div class="label-grid">PREV 1</div><div id="ls_last_lap_1" class="ls-hist-val">--:--.--</div></div></div></div>
+        </div>
+        <div class="ls-info-grid">
+            <div class="info-box"><div class="label-grid">S1</div><div id="ls_s1_val" class="ls-val-grid">--.--</div></div>
+            <div class="info-box"><div class="label-grid">S2</div><div id="ls_s2_val" class="ls-val-grid">--.--</div></div>
+            <div class="info-box"><div class="label-grid">S3</div><div id="ls_s3_val" class="ls-val-grid">--.--</div></div>
+            <div class="info-box"><div class="label-grid">TRAP</div><div id="ls_max_speed_val" class="ls-val-grid">0.0</div></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div id="gps_monitor">GPS OFF</div>
+        <button class="menu-btn" id="btn_menu">MENU</button>
+        <button class="stop-btn" id="btn_stop">STOP</button>
+        <div id="mode_label">OFFLINE</div>
+        <button class="reset-btn" id="btn_reset">RESET</button>
+        <div id="lap_count_display">L0</div>
+    </div>
+</div>
+
+<div id="settings_modal">
+    <div class="modal-content">
+        <div class="modal-row"><label>SESSION NAME</label><input type="text" id="input_session_name" value="PRACTICE 1"></div>
+        <div class="modal-row"><label>CAR No.</label><input type="text" id="input_car_no" value="98"></div>
+        <div class="modal-row"><label>DRIVER</label><input type="text" id="input_driver" value="Katz"></div>
+        <div class="modal-row" style="display:flex; gap:10px;"><div style="flex:1;"><label>SESSION TIME (MIN)</label><input type="number" id="input_session_time" value="30"></div><div style="flex:1;"><label>AUTO START SPD (km/h)</label><input type="number" id="input_start_speed" value="30"></div></div>
+        <button class="action-btn" style="background:#007aff; color:#fff;" id="btn_final_test">1. 全データ通信テスト送信</button>
+        <button class="action-btn" style="background:var(--c-best); color:#000;" id="btn_dl">2. DOWNLOAD LOGS (.CSV)</button>
+        <button class="action-btn" style="background:#444; color:#fff; margin-top:10px;" id="btn_close">3. CLOSE & SAVE</button>
+    </div>
+</div>
+
+<script>
+    // --- 重要: 今成功したテスト用URLをここに貼り付けてください ---
+    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbz0YZ7npW71KmavkchY03pRK7FO3Uk_ohGi8OSKdr7EmtqMX_ItpXqi5DtohAdxq3Xl/exec";
+
+    var FINISH_LINE = { id: 0, p1: { lat: 35.372210, lng: 138.926987 }, p2: { lat: 35.371996, lng: 138.927204 } };
+    var TRAP_GATE = { p1: { lat: 35.375261, lng: 138.931559 }, p2: { lat: 35.375080, lng: 138.931780 } };
+    var ALL_GATES = [{ id: 1, type: 'delta', p1: { lat: 35.374636, lng: 138.933779 }, p2: { lat: 35.374842, lng: 138.933332 } },{ id: 2, type: 'sector', p1: { lat: 35.372210, lng: 138.931274 }, p2: { lat: 35.372410, lng: 138.930944 } },{ id: 3, type: 'delta', p1: { lat: 35.369624, lng: 138.927648 }, p2: { lat: 35.369636, lng: 138.927162 } },{ id: 4, type: 'delta', p1: { lat: 35.366635, lng: 138.927357 }, p2: { lat: 35.366820, lng: 138.926851 } },{ id: 5, type: 'sector', p1: { lat: 35.364597, lng: 138.924395 }, p2: { lat: 35.364935, lng: 138.924095 } },{ id: 6, type: 'delta', p1: { lat: 35.364999, lng: 138.922934 }, p2: { lat: 35.365480, lng: 138.923102 } },{ id: 10, type: 'delta', p1: { lat: 35.367615, lng: 138.922004 }, p2: { lat: 35.367806, lng: 138.921523 } }];
+    var initialized=false, isRunning=false, lapStartTime=0, s1Time=0, s2Time=0, bestLapTime=Infinity, lapCount=0, lastLat=null, lastLng=null, lastTime=0, currentSpeed=0, trapSpeed=0, watchId=null, sessionEndTime=0, autoStartSpeed=30, currentGateSplits={}, bestGateSplits={}, lapLogs=[];
+
+    function formatTime(ms) { if (!ms || ms <= 0) return "0:00.00"; var m = Math.floor(ms / 60000); var s = Math.floor((ms % 60000) / 1000); var ss = String(Math.floor((ms % 1000) / 10)).padStart(2, '0'); return m + ":" + (s < 10 ? "0" : "") + s + "." + ss; }
+    function formatRemain(ms) { if(ms <= 0) return "00:00"; var totalSec = Math.floor(ms / 1000); var m = Math.floor(totalSec / 60), s = totalSec % 60; return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0'); }
+    
+    function syncDisplay(id, value) { 
+        const pEl = document.getElementById(id); if (pEl) pEl.innerText = value; 
+        const lsEl = document.getElementById("ls_" + id); if (lsEl) lsEl.innerText = value; 
+    }
+
+    async function sendDataToSheet(lapData) { 
+        if (!GOOGLE_SHEET_URL.startsWith("http")) return; 
+        try { 
+            const finalUrl = GOOGLE_SHEET_URL + (GOOGLE_SHEET_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
+            await fetch(finalUrl, { method: "POST", mode: "no-cors", body: JSON.stringify(lapData) }); 
+        } catch (e) { console.error("GAS SEND ERROR:", e); } 
+    }
+
+    async function executeFinalRandomTest() { 
+        const rS1 = (23.8 + Math.random() * 2.5).toFixed(2);
+        const rS2 = (36.8 + Math.random() * 2.5).toFixed(2);
+        const rS3 = (40.8 + Math.random() * 2.5).toFixed(2);
+        const tMs = (parseFloat(rS1) + parseFloat(rS2) + parseFloat(rS3)) * 1000;
+        
+        const payload = { 
+            car_no: document.getElementById('input_car_no').value || "98", 
+            lap_time: formatTime(tMs),
+            s1: rS1, s2: rS2, s3: rS3, 
+            v_max: (208.0 + Math.random() * 12.0).toFixed(1),
+            timestamp: new Date().toLocaleTimeString('ja-JP')
+        }; 
+        await sendDataToSheet(payload); 
+        alert("送信テスト実行\nTime: " + payload.lap_time + "\nCar: " + payload.car_no); 
+    }
+
+    function getIntersectTime(p1, p2, p3, p4, t1, t2) { var u_b = (p4.lat - p3.lat) * (p2.lng - p1.lng) - (p4.lng - p3.lng) * (p2.lat - p1.lat); if (u_b === 0) return null; var ua = ((p4.lng - p3.lng) * (p1.lat - p3.lat) - (p4.lat - p3.lat) * (p1.lng - p3.lng)) / u_b; var ub = ((p2.lng - p1.lng) * (p1.lat - p3.lat) - (p2.lat - p1.lat) * (p1.lng - p3.lng)) / u_b; return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) ? t1 + (t2 - t1) * ua : null; }
+    
+    function processGPS(p2, now) {
+        if (lastLat === null) return;
+        var p1 = {lat: lastLat, lng: lastLng};
+        if (initialized && !isRunning && currentSpeed >= autoStartSpeed) { 
+            isRunning = true; 
+            sessionEndTime = Date.now() + (parseInt(document.getElementById('input_session_time').value) * 60 * 1000); 
+            document.getElementById('mode_label').innerText = "RACING"; 
+            document.getElementById('mode_label').style.color = "var(--c-best)"; 
+        }
+        if (!isRunning) return;
+        var crossTrap = getIntersectTime(p1, p2, TRAP_GATE.p1, TRAP_GATE.p2, lastTime, now);
+        if (crossTrap) { trapSpeed = currentSpeed; syncDisplay('max_speed_val', trapSpeed.toFixed(1)); }
+        ALL_GATES.forEach(gate => {
+            var cross = getIntersectTime(p1, p2, gate.p1, gate.p2, lastTime, now);
+            if (cross && !currentGateSplits[gate.id] && lapStartTime > 0) {
+                var split = cross - lapStartTime; currentGateSplits[gate.id] = split;
+                if (bestGateSplits[gate.id]) { var diff = split - bestGateSplits[gate.id]; const txt = (diff > 0 ? "+" : "") + (diff/1000).toFixed(2); const cls = diff <= 0 ? 'txt-faster' : 'txt-slower'; syncDisplay('delta_val', txt); if(document.getElementById('delta_val')) document.getElementById('delta_val').className = cls; if(document.getElementById('ls_delta_val')) document.getElementById('ls_delta_val').className = cls; }
+                if (gate.type === 'sector') { if (gate.id === 2) { s1Time = cross; syncDisplay('s1_val', (split/1000).toFixed(2)); } else if (gate.id === 5) { s2Time = cross; syncDisplay('s2_val', ((cross - s1Time)/1000).toFixed(2)); } }
+            }
+        });
+        var crossFinish = getIntersectTime(p1, p2, FINISH_LINE.p1, FINISH_LINE.p2, lastTime, now);
+        if (crossFinish && (now - lapStartTime > 5000)) { 
+            if (lapStartTime === 0) { lapStartTime = crossFinish; lapCount = 1; return; } 
+            var lapMs = crossFinish - lapStartTime; 
+            var lapStr = formatTime(lapMs); 
+            var s3Val = s2Time > 0 ? ((crossFinish - s2Time)/1000).toFixed(2) : "--.--"; 
+            syncDisplay('s3_val', s3Val); 
+            var log = { 
+                car_no: document.getElementById('input_car_no').value, 
+                lap_time: lapStr, 
+                s1: document.getElementById('s1_val').innerText, 
+                s2: document.getElementById('s2_val').innerText, 
+                s3: s3Val, 
+                v_max: trapSpeed.toFixed(1),
+                timestamp: new Date().toLocaleTimeString('ja-JP')
+            }; 
+            sendDataToSheet(log); 
+            lapLogs.push(log); 
+            syncDisplay('last_lap_1', lapStr); 
+            if (lapMs < bestLapTime) { bestLapTime = lapMs; bestGateSplits = {...currentGateSplits}; syncDisplay('best_lap_display', lapStr); } 
+            lapCount++; lapStartTime = crossFinish; s1Time = 0; s2Time = 0; currentGateSplits = {}; document.getElementById('lap_count_display').innerText = "L" + lapCount; 
+        }
+    }
+    
+    function startGPS() { if (watchId) navigator.geolocation.clearWatch(watchId); watchId = navigator.geolocation.watchPosition(pos => { currentSpeed = (pos.coords.speed || 0) * 3.6; processGPS({lat: pos.coords.latitude, lng: pos.coords.longitude}, pos.timestamp); document.getElementById('gps_monitor').innerText = "LAT:" + pos.coords.latitude.toFixed(4) + "\nSPD:" + currentSpeed.toFixed(1); lastLat = pos.coords.latitude; lastLng = pos.coords.longitude; lastTime = pos.timestamp; }, null, { enableHighAccuracy: true, timeout: 10000 }); }
+    
+    function updateLoop() { 
+        if (!initialized) return; 
+        const now = Date.now(); 
+        if (isRunning && lapStartTime > 0) { syncDisplay('current_lap_time', formatTime(now - lapStartTime)); } 
+        if (isRunning && sessionEndTime > 0) { syncDisplay('remain_display', formatRemain(sessionEndTime - now)); } 
+        requestAnimationFrame(updateLoop); 
+    }
+
+    function initRemainDisplay() {
+        const minutes = parseInt(document.getElementById('input_session_time').value) || 0;
+        const timeStr = String(minutes).padStart(2, '0') + ":00";
+        syncDisplay('remain_display', timeStr);
+    }
+
+    document.getElementById('start_btn_large').addEventListener('click', () => { 
+        document.getElementById('start_overlay').style.display = 'none'; 
+        initialized = true; 
+        document.getElementById('mode_label').innerText = "WAITING..."; 
+        initRemainDisplay();
+        startGPS(); 
+        requestAnimationFrame(updateLoop); 
+    });
+
+    function saveSettings() { 
+        localStorage.setItem("K_SESS", document.getElementById('input_session_name').value); 
+        localStorage.setItem("K_CAR", document.getElementById('input_car_no').value); 
+        localStorage.setItem("K_DRIV", document.getElementById('input_driver').value); 
+        localStorage.setItem("K_TIME", document.getElementById('input_session_time').value); 
+        localStorage.setItem("K_SPD", document.getElementById('input_start_speed').value); 
+        autoStartSpeed = parseInt(document.getElementById('input_start_speed').value); 
+        document.getElementById('car_no_overlay').innerText = "# " + document.getElementById('input_car_no').value; 
+        initRemainDisplay();
+    }
+
+    window.onload = () => { 
+        document.getElementById('input_session_name').value = localStorage.getItem("K_SESS") || "PRACTICE 1"; 
+        document.getElementById('input_car_no').value = localStorage.getItem("K_CAR") || "98"; 
+        document.getElementById('input_driver').value = localStorage.getItem("K_DRIV") || "Katz"; 
+        document.getElementById('input_session_time').value = localStorage.getItem("K_TIME") || "30"; 
+        document.getElementById('input_start_speed').value = localStorage.getItem("K_SPD") || "30"; 
+        autoStartSpeed = parseInt(document.getElementById('input_start_speed').value); 
+        document.getElementById('car_no_overlay').innerText = "# " + document.getElementById('input_car_no').value; 
+        initRemainDisplay();
+    };
+
+    document.getElementById('btn_menu').onclick = () => { document.getElementById('settings_modal').style.display = 'flex'; };
+    document.getElementById('btn_close').onclick = () => { saveSettings(); document.getElementById('settings_modal').style.display = 'none'; };
+    document.getElementById('btn_final_test').onclick = executeFinalRandomTest;
+
+    document.getElementById('btn_stop').onclick = () => { 
+        if(confirm("STOP RECORDING?")) {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            isRunning = false;
+            document.getElementById('mode_label').innerText = "STOPPED";
+            document.getElementById('mode_label').style.color = "var(--c-slow)";
+        } 
+    };
+    
+    document.getElementById('btn_reset').onclick = () => { 
+        if(confirm("RESET SESSION? (ALL DATA WILL BE CLEARED)")) location.reload(); 
+    };
+
+    document.getElementById('btn_dl').onclick = () => { let csv = "Session,Driver,Lap,Time,S1,S2,S3,VMax\n"; lapLogs.forEach(l => { csv += `${l.session_name},${l.driver_name},${l.lap_no},${l.lap_time},${l.s1},${l.s2},${l.s3},${l.v_max}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.setAttribute('href', url); a.setAttribute('download', `log_${Date.now()}.csv`); a.click(); };
+</script>
+</body>
+</html>
